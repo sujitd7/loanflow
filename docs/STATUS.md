@@ -16,7 +16,9 @@ app, worker skeleton, pre-commit, `CLAUDE.md`, `.claude/` (hooks + 7 subagents +
 
 ## Next
 - Create the GitHub repo, push, turn on branch protection for `main`
-- Verify `docker compose up` is green end to end (needs Docker Desktop)
+- Local dev: Docker Desktop is blocked on this machine (Intel VT-x disabled in
+  BIOS + WSL2 not installed). Fix per `docs/LOCAL_DEV.md` Option A, or use the
+  native workflow (Option B) with a free Neon Postgres in the meantime.
 - Install host tooling so the hooks auto-run: `pip install ruff pre-commit`
   (Node is already present)
 - Start **P1 — Identity, roles, RBAC** on a branch

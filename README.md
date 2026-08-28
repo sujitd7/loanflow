@@ -24,12 +24,16 @@ Full plan: [`docs/ROADMAP.md`](docs/ROADMAP.md) · Architecture: [`docs/ARCHITEC
 
 ## Run it locally
 
-Prerequisites: Docker Desktop.
+With Docker Desktop:
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
+
+**No working Docker?** See [`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md) — the stack runs
+natively with a venv + `npm run dev` against any Postgres (a free Neon database
+works). Tests fall back to SQLite with no setup.
 
 | Service          | URL                          |
 |------------------|------------------------------|
