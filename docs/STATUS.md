@@ -1,6 +1,6 @@
 # Status
 
-**Phase:** P1 — Identity, roles, RBAC (complete, in PR)
+**Phase:** P1 — Identity, roles, RBAC (complete — PR #1, CI green, awaiting merge)
 
 ## Done
 - **P0** — monorepo scaffold, docker-compose, `/health` API + Vite app, worker
@@ -14,8 +14,11 @@
   - `app/errors.py` — `AppError` hierarchy + handler wired in `create_app()`
   - conftest: `make_user` factory, per-role user + `auth_*` header fixtures,
     test-only `/_probe/*` routes
-  - `tests/test_auth.py` — login ok/bad/inactive, expired + wrong-type tokens,
-    rotation + reuse, logout, per-role probe matrix (28 tests, green)
+  - `tests/test_auth.py` + `tests/test_config.py` — login ok/bad/inactive,
+    expired + wrong-type tokens, rotation + reuse, logout ownership, per-role
+    probe matrix, JWT-secret boot guard (35 tests, green on CI Postgres)
+  - `security-reviewer` pass drove the hardening (reuse-burn committed
+    independently, secret fail-fast, row-locked rotation, timing, claim checks)
 
 ## Deferred from P0 (infra, not blocking)
 - GitHub repo + branch protection on `main`.

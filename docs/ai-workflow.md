@@ -41,8 +41,16 @@ Typical feature flow for an endpoint:
 5. `test-writer` fills edge cases.
 6. `pr-writer` drafts the PR.
 
-**Evidence:** _link a PR where `security-reviewer` caught a real object-level
-access bug, with its output quoted._
+**Evidence — P1 ([PR #1](https://github.com/sujitd7/loanflow/pull/1)):**
+`security-reviewer` flagged a HIGH-severity bug before merge. Refresh-token
+reuse-detection called `_revoke_all_for_user(...)` and then raised `Unauthorized`;
+because that write lived in the request-scoped session, `get_db`'s
+rollback-on-exception undid it, so in production a stolen refresh token stayed
+usable forever — the tests passed only because the test `get_db` override never
+commits or rolls back. Fixed by committing the revocation in its own unit of
+work, plus a regression test (`test_refresh_reuse_burn_is_committed_before_the_401`)
+that uses real per-request sessions. The same pass also drove a JWT-secret
+fail-fast, row-locked rotation, and required-claim checks.
 
 ## The agentic loop
 
