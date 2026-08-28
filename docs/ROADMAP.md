@@ -10,7 +10,8 @@ suite, tick the item, commit`.
 - [x] Worker skeleton (APScheduler, no jobs)
 - [x] pre-commit, `CLAUDE.md`, `.claude/` hooks + agents + skills
 - [x] CI skeleton (lint + test on PR)
-- [ ] `git init`, first commit, push to GitHub, branch protection on `main`
+- [x] `git init`, first commit
+- [ ] Create the GitHub repo, push, branch protection on `main`
 - [ ] Confirm `docker compose up` is green on the dev machine
 
 ## P1 — Identity, roles, RBAC
