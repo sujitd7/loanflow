@@ -1,26 +1,30 @@
 # Status
 
-**Phase:** P0 — Foundation & tooling (in progress)
-
-Scaffold is in place: monorepo layout, docker-compose, health-check API + Vite
-app, worker skeleton, pre-commit, `CLAUDE.md`, `.claude/` (hooks + 7 subagents +
-6 skills), CI skeleton.
+**Phase:** P1 — Identity, roles, RBAC (complete, in PR)
 
 ## Done
-- Repo structure; git initialised; first commit on `main`
-- FastAPI `/health` (checks DB) + Vite React app calling it
-- APScheduler worker skeleton (no jobs yet)
-- `.claude/` workflow config committed
-- Verified locally: `ruff`, `mypy --strict`, `pytest` (api) and
-  `tsc`, `eslint`, `vitest`, `vite build` (web) all green
+- **P0** — monorepo scaffold, docker-compose, `/health` API + Vite app, worker
+  skeleton, `.claude/` workflow config, CI skeleton, `git init`.
+- **P1** — identity layer:
+  - `users` + `refresh_tokens` models, Alembic migration `bd693f8a6bb0`
+  - Argon2 password hashing + JWT access/refresh in `app/security.py`
+  - `POST /auth/login`, `POST /auth/refresh` (rotating, with reuse detection that
+    burns the token family), `POST /auth/logout`, `GET /auth/me`
+  - `Role` / `Team` enums; `require_roles(...)` RBAC dependency in `app/deps.py`
+  - `app/errors.py` — `AppError` hierarchy + handler wired in `create_app()`
+  - conftest: `make_user` factory, per-role user + `auth_*` header fixtures,
+    test-only `/_probe/*` routes
+  - `tests/test_auth.py` — login ok/bad/inactive, expired + wrong-type tokens,
+    rotation + reuse, logout, per-role probe matrix (28 tests, green)
+
+## Deferred from P0 (infra, not blocking)
+- GitHub repo + branch protection on `main`.
+- `docker compose up` verification — Docker is blocked on this machine
+  (`docs/LOCAL_DEV.md`). Backend tests run on the SQLite fallback locally; CI
+  uses a real Postgres service. Migration round-trip is verified there.
 
 ## Next
-- Create the GitHub repo, push, turn on branch protection for `main`
-- Local dev: Docker Desktop is blocked on this machine (Intel VT-x disabled in
-  BIOS + WSL2 not installed). Fix per `docs/LOCAL_DEV.md` Option A, or use the
-  native workflow (Option B) with a free Neon Postgres in the meantime.
-- Install host tooling so the hooks auto-run: `pip install ruff pre-commit`
-  (Node is already present)
-- Start **P1 — Identity, roles, RBAC** on a branch
+- Merge the P1 PR.
+- Start **P2 — Loan-file intake + task generation** on a branch.
 
 See `docs/ROADMAP.md` for the full plan.
