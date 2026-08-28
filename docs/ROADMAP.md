@@ -11,15 +11,17 @@ suite, tick the item, commit`.
 - [x] pre-commit, `CLAUDE.md`, `.claude/` hooks + agents + skills
 - [x] CI skeleton (lint + test on PR)
 - [x] `git init`, first commit
-- [ ] Create the GitHub repo, push, branch protection on `main`
-- [ ] Confirm `docker compose up` is green on the dev machine
+- [ ] Create the GitHub repo, push, branch protection on `main` — _deferred (infra)_
+- [ ] Confirm `docker compose up` is green on the dev machine — _deferred; Docker
+      blocked on this machine, see `docs/LOCAL_DEV.md`. Tests run on SQLite locally
+      and the CI Postgres service._
 
 ## P1 — Identity, roles, RBAC
-- [ ] `users` model + Alembic migration; Argon2 hashing in `app/security.py`
-- [ ] `POST /auth/login`, `POST /auth/refresh` (rotating), `GET /auth/me`
-- [ ] `Role` enum + `require_roles(...)` dependency in `app/deps.py`
-- [ ] `conftest.py` fixtures: `client`, `db`, per-role auth headers
-- [ ] Tests: login ok/bad, expired token, each role vs a protected probe route
+- [x] `users` model (+ `refresh_tokens`) + Alembic migration; Argon2 hashing in `app/security.py`
+- [x] `POST /auth/login`, `POST /auth/refresh` (rotating + reuse detection), `POST /auth/logout`, `GET /auth/me`
+- [x] `Role` enum + `require_roles(...)` dependency in `app/deps.py`
+- [x] `conftest.py` fixtures: `client`, `db`, per-role auth headers
+- [x] Tests: login ok/bad, expired token, each role vs a protected probe route
 
 ## P2 — Loan-file intake + task generation
 - [ ] `loan_files`, `loan_documents` models + migration
