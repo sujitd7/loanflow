@@ -40,7 +40,7 @@ flowchart LR
     Worker["worker — APScheduler"] -->|advisory-locked jobs| DB
     Worker -->|purge on schedule| Store
 
-    subgraph Request path
+    subgraph reqpath ["Inside the API: router → service → state machine"]
       direction TB
       R["router — HTTP only"] --> S["service — business logic"]
       S --> T["state_machine.transition() — the only status writer"]
@@ -55,7 +55,7 @@ flowchart LR
 |--------------|----------------|
 | `routers/`   | HTTP only — validate input, call one service, serialize a schema. RBAC declared here via `require_roles(...)`. |
 | `schemas/`   | Pydantic v2 request/response models — no raw dicts cross the boundary. |
-| `services/`  | Business logic. Every status change goes through `state_machine.transition()` — enforced by a commit hook. |
+| `services/`  | Business logic. Every status change goes through `state_machine.transition()`; a hook flags raw `.status =` writes. |
 | `models/`    | SQLAlchemy 2.0 ORM (`Mapped[...]`), Alembic migrations. |
 | `db.py`      | Engine + `get_db` — one session per request, commit on success / rollback on error. |
 | `deps.py`    | Auth + RBAC dependencies. |
@@ -180,13 +180,14 @@ make migrate m="add loan_files"
 ## Repo layout
 
 ```
-api/      FastAPI service + SQLAlchemy models + Alembic migrations + pytest
-worker/   APScheduler job runner (housekeeping / purge)
-web/      React + TypeScript SPA (Vite)  — foundation lands in P5
-infra/    deployment config             — added in P8
-docs/     roadmap, architecture, state machine, ADRs, AI-workflow write-up
-.claude/  committed Claude Code config: CLAUDE.md pointer, hooks, subagents, skills
-scripts/  hook scripts and helpers
+CLAUDE.md   project brief loaded into every Claude Code session
+api/        FastAPI service + SQLAlchemy models + Alembic migrations + pytest
+worker/     APScheduler job runner (housekeeping / purge)
+web/        React + TypeScript SPA (Vite)  — foundation lands in P5
+infra/      deployment config             — added in P8
+docs/       roadmap, architecture, state machine, ADRs, AI-workflow write-up
+.claude/    committed Claude Code config: hooks, subagents, skills
+scripts/    hook scripts and helpers
 ```
 
 ## Tech stack
