@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .errors import install_error_handlers
-from .routers import auth, health
+from .routers import auth, health, loan_files
 
 logging.basicConfig(level=settings.log_level)
 
@@ -25,8 +25,8 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(auth.router)
+    app.include_router(loan_files.router)
     # Register new routers here as phases land:
-    # app.include_router(loan_files.router)
     # app.include_router(tasks.router)
     # app.include_router(dashboard.router)
 
