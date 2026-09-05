@@ -20,9 +20,18 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
     log_level: str = "INFO"
 
+    upload_dir: str = "var/uploads"
+    max_upload_bytes: int = 10 * 1024 * 1024
+    max_documents_per_file: int = 20
+    allowed_upload_content_types: str = "application/pdf,image/png,image/jpeg"
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def allowed_upload_content_type_set(self) -> set[str]:
+        return {c.strip() for c in self.allowed_upload_content_types.split(",") if c.strip()}
 
     @model_validator(mode="after")
     def _reject_insecure_secret_outside_local(self) -> "Settings":

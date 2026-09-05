@@ -1,8 +1,16 @@
 # State machine
 
-Single source of truth for status transitions. Enforced by `transition()` in
-`api/app/services/state_machine.py` (added in P3). No code assigns a `status`
-column directly — a hook flags it.
+Single source of truth for status transitions. No code assigns a `status` column
+directly — a hook flags it; the only writer is `transition()` in
+`api/app/services/state_machine.py`.
+
+`transition()` validates the **graph edge** (and sets the entry timestamp +
+appends the audit event). The **guard conditions** in the tables below are
+enforced by the calling service before it calls `transition()` —
+`loan_files.submit_loan_file` / `_assert_submittable` for the loan file, the
+`/tasks/*` handlers for review tasks. P2 shipped the loan-file half of
+`transition()`; P3 adds `transition_task()` for the review-task graph and the
+`IN_REVIEW → FUND_READY_TO_RELEASE` rollup.
 
 ## Loan file
 
@@ -12,7 +20,7 @@ DRAFT ──submit──> SUBMITTED ──generate tasks──> IN_REVIEW ──
 
 | From                    | To                      | Trigger                     | Guard |
 |-------------------------|-------------------------|-----------------------------|-------|
-| `DRAFT`                 | `SUBMITTED`             | OPS_MAKER submits           | ≥1 document; `loan_amount > 0`; valid `product_type` |
+| `DRAFT`                 | `SUBMITTED`             | OPS_MAKER submits           | ≥1 document; `loan_amount > 0` (valid `product_type` is structurally guaranteed by the non-null enum column, not re-checked) |
 | `SUBMITTED`             | `IN_REVIEW`             | task generation             | exactly 4 `review_tasks` created + assigned in one transaction |
 | `IN_REVIEW`             | `FUND_READY_TO_RELEASE` | last review task completes  | all 4 tasks `COMPLETED`; sets `fund_ready_at = now()` |
 | `FUND_READY_TO_RELEASE` | `PURGED`                | housekeeping job            | `now() - fund_ready_at >= PURGE_AFTER_DAYS`; advisory lock held; sets `purged_at` |
@@ -43,7 +51,8 @@ PENDING_MAKER ──maker submits──> PENDING_CHECKER ──approve──> CO
 2. A loan file is `FUND_READY_TO_RELEASE` **iff** its 4 tasks are all `COMPLETED`,
    and `fund_ready_at` is non-null exactly then.
 3. Every transition appends one `task_events` row: `(actor_id, action,
-   from_status, to_status, payload_json, created_at)`.
+   from_status, to_status, payload_json, created_at)`. `actor_id` is nullable —
+   null for system/housekeeping events (e.g. the P4 purge job).
 4. `version` is incremented on every task write; a mismatch → HTTP 409, client
    refetches and retries (optimistic locking).
 5. `PURGED` files retain only a `loan_file_archive` row with **no PII**

@@ -24,17 +24,21 @@ suite, tick the item, commit`.
 - [x] Tests: login ok/bad, expired token, each role vs a protected probe route
 
 ## P2 — Loan-file intake + task generation
-- [ ] `loan_files`, `loan_documents` models + migration
-- [ ] `POST /loan-files` (OPS_MAKER), document upload, size/type limits
-- [ ] `POST /loan-files/{id}/submit` — atomically create 4 assigned review tasks
+- [x] `loan_files`, `loan_documents` models + migration (also `review_tasks`,
+      `task_events` — submit needs them; P3 still owns their behaviour)
+- [x] `POST /loan-files` (OPS_MAKER), document upload, size/type limits
+- [x] `POST /loan-files/{id}/submit` — atomically create 4 assigned review tasks
       (round-robin within UW), write `task_events`, idempotent
-- [ ] `GET /loan-files` — pagination + filtering + per-file task counts (no N+1)
-- [ ] `GET /loan-files/{id}` — file + tasks + activity feed
-- [ ] Tests incl. idempotent submit and the N+1 guard
+- [x] `GET /loan-files` — pagination + filtering + per-file task counts (no N+1)
+- [x] `GET /loan-files/{id}` — file + tasks + activity feed
+- [x] Tests incl. idempotent submit and the N+1 guard
+- [x] `app/services/state_machine.py` introduced early (loan-file transitions
+      only) — the guard hook forbids raw `.status` writes anywhere else
 
 ## P3 — Maker–checker flow + state machine + audit
-- [ ] `review_tasks` model with `version`; `task_events` model
-- [ ] `app/services/state_machine.py` — `transition()` guard, single source of truth
+- [x] `review_tasks` model with `version`; `task_events` model _(landed in P2)_
+- [~] `app/services/state_machine.py` — loan-file half landed in P2; P3 adds
+      `transition_task()` for the review-task graph + FUND_READY rollup
 - [ ] `POST /tasks/{id}/maker-submit` (findings → PENDING_CHECKER, needs `version`)
 - [ ] `POST /tasks/{id}/checker-decide` (approve → COMPLETED / reject → CHANGES_REQUESTED)
 - [ ] Enforce `checker_id != maker_id`; last task completing → file FUND_READY_TO_RELEASE

@@ -1,10 +1,15 @@
 import os
 from collections.abc import Callable, Iterator
+from datetime import date
+from decimal import Decimal
+from types import TracebackType
+from typing import Any
 
 import pytest
 from fastapi import APIRouter, Depends
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
+from sqlalchemy.engine import Connection
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -12,6 +17,9 @@ from app.db import get_db
 from app.deps import require_roles
 from app.main import app
 from app.models import Base
+from app.models.loan_document import LoanDocument
+from app.models.loan_file import LoanFile, LoanFileStatus, ProductType
+from app.models.review_task import CHECK_TYPE_ORDER, ReviewTask, ReviewTaskStatus
 from app.models.user import Role, Team, User
 from app.security import create_access_token, hash_password
 
@@ -196,3 +204,121 @@ def auth_uw_checker(
 @pytest.fixture
 def auth_admin(admin: User, token_headers: Callable[[User], dict[str, str]]) -> dict[str, str]:
     return token_headers(admin)
+
+
+# --- Loan-file / task fixtures ------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _upload_dir(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Never touch the real upload directory during tests."""
+    monkeypatch.setattr("app.config.settings.upload_dir", str(tmp_path / "uploads"))
+
+
+@pytest.fixture
+def uw_makers(make_user: Callable[..., User]) -> list[User]:
+    return [make_user(Role.UW_MAKER) for _ in range(3)]
+
+
+@pytest.fixture
+def uw_checkers(make_user: Callable[..., User]) -> list[User]:
+    return [make_user(Role.UW_CHECKER) for _ in range(2)]
+
+
+@pytest.fixture
+def make_loan_file(db: Session, make_user: Callable[..., User]) -> Callable[..., LoanFile]:
+    counter = {"n": 0}
+
+    def _make(
+        *,
+        created_by: User | None = None,
+        status: LoanFileStatus = LoanFileStatus.DRAFT,
+        documents: int = 0,
+        loan_amount: Decimal = Decimal("25000.00"),
+        product_type: ProductType = ProductType.TERM_LOAN,
+    ) -> LoanFile:
+        counter["n"] += 1
+        n = counter["n"]
+        owner = created_by or make_user(Role.OPS_MAKER)
+        loan_file = LoanFile(
+            status=status,
+            product_type=product_type,
+            loan_amount=loan_amount,
+            currency="USD",
+            applicant_full_name=f"Applicant {n}",
+            applicant_email=f"applicant-{n}@example.com",
+            applicant_dob=date(1990, 1, 1),
+            created_by_id=owner.id,
+        )
+        db.add(loan_file)
+        db.flush()
+        for i in range(documents):
+            db.add(
+                LoanDocument(
+                    loan_file_id=loan_file.id,
+                    filename=f"doc-{n}-{i}.pdf",
+                    content_type="application/pdf",
+                    byte_size=10,
+                    sha256=f"{n:032x}{i:032x}"[:64],
+                    storage_path=f"{loan_file.id}/doc-{i}.pdf",
+                    uploaded_by_id=owner.id,
+                )
+            )
+        db.flush()
+        return loan_file
+
+    return _make
+
+
+@pytest.fixture
+def assign_tasks(db: Session) -> Callable[..., list[ReviewTask]]:
+    """Insert the four review tasks for a file without going through submit()."""
+
+    def _assign(loan_file: LoanFile, makers: list[User], checkers: list[User]) -> list[ReviewTask]:
+        tasks = []
+        for i, check_type in enumerate(CHECK_TYPE_ORDER):
+            task = ReviewTask(
+                loan_file_id=loan_file.id,
+                check_type=check_type,
+                status=ReviewTaskStatus.PENDING_MAKER,
+                maker_id=makers[i % len(makers)].id,
+                checker_id=checkers[i % len(checkers)].id,
+                version=1,
+            )
+            db.add(task)
+            tasks.append(task)
+        db.flush()
+        return tasks
+
+    return _assign
+
+
+class QueryCounter:
+    """Count SQL statements executed on `engine` within a `with` block."""
+
+    def __init__(self, target_engine: Any) -> None:
+        self.engine = target_engine
+        self.statements: list[str] = []
+
+    def _record(
+        self,
+        _conn: Connection,
+        _cursor: Any,
+        statement: str,
+        _parameters: Any,
+        _context: Any,
+        _executemany: bool,
+    ) -> None:
+        self.statements.append(statement)
+
+    def __enter__(self) -> "QueryCounter":
+        event.listen(self.engine, "before_cursor_execute", self._record)
+        return self
+
+    def __exit__(
+        self,
+        _exc_type: type[BaseException] | None,
+        _exc: BaseException | None,
+        _tb: TracebackType | None,
+    ) -> None:
+        event.remove(self.engine, "before_cursor_execute", self._record)

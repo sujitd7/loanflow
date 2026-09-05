@@ -17,5 +17,14 @@ class TimestampMixin:
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
 
+from .loan_document import DocumentKind, LoanDocument  # noqa: E402, F401
+from .loan_file import LoanFile, LoanFileStatus, ProductType  # noqa: E402, F401
 from .refresh_token import RefreshToken  # noqa: E402, F401
+from .review_task import (  # noqa: E402, F401
+    CHECK_TYPE_ORDER,
+    CheckType,
+    ReviewTask,
+    ReviewTaskStatus,
+)
+from .task_event import TaskEvent  # noqa: E402, F401
 from .user import Role, Team, User  # noqa: E402, F401

@@ -29,3 +29,9 @@ dist/
 # Data
 pgdata/
 uploads/
+
+# Claude Code agent worktrees
+.claude/worktrees/
+
+# Local upload storage
+/api/var/
