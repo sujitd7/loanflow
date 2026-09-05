@@ -64,9 +64,7 @@ def upgrade() -> None:
     op.create_table(
         "loan_files",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column(
-            "status", loan_file_status, server_default="DRAFT", nullable=False
-        ),
+        sa.Column("status", loan_file_status, server_default="DRAFT", nullable=False),
         sa.Column("product_type", product_type, nullable=False),
         sa.Column("loan_amount", sa.Numeric(precision=14, scale=2), nullable=False),
         sa.Column("currency", sa.String(length=3), server_default="USD", nullable=False),
