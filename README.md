@@ -19,6 +19,12 @@ trail, expand/contract migrations) rather than CRUD — and to run a deliberate,
 > the loan-file domain and the React UI are next. See
 > [Roadmap progress](#roadmap-progress).
 
+📖 **Documentation site:** <https://sujitd7.github.io/LoanFlow/> — MkDocs + Material,
+published from `docs/` by GitHub Actions.
+_(Placeholder URL: the GitHub repo isn't created yet — see [`docs/STATUS.md`](docs/STATUS.md).
+Fill in the real `<org>/<repo>` slug in `mkdocs.yml` and `.github/workflows/docs.yml`,
+then enable Pages → "GitHub Actions" in repo settings.)_
+
 Full plan: [`docs/ROADMAP.md`](docs/ROADMAP.md) ·
 Architecture: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) ·
 State machine: [`docs/STATE_MACHINE.md`](docs/STATE_MACHINE.md) ·
