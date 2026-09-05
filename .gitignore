@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+.venv-docs/
 venv/
 .pytest_cache/
 .mypy_cache/
@@ -35,3 +36,6 @@ uploads/
 
 # Local upload storage
 /api/var/
+
+# Docs site build output
+/site/
